@@ -21,3 +21,22 @@ dependencies {
     // Test
     testImplementation libs.testStarter
 }
+
+jib {
+    from {
+        image = 'eclipse-temurin:21-jre-alpine'  // base image
+    }
+    to {
+        image = 'ghcr.io/MuratErtik/api-gateway'
+        tags = ['latest', "${project.version}"]
+        auth {
+            username = System.getenv('REGISTRY_USERNAME')
+            password = System.getenv('REGISTRY_PASSWORD')
+        }
+    }
+    container {
+        ports = ['8088']
+        environment = ['SPRING_PROFILES_ACTIVE': 'prod']
+        jvmFlags = ['-Xms256m', '-Xmx512m']
+    }
+}

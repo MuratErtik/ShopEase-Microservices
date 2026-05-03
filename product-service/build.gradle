@@ -1,0 +1,46 @@
+dependencies {
+	//Core & Web
+	implementation libs.springBootStarterWeb
+	implementation libs.springBootActuator
+	implementation libs.swaggerui
+
+	// --- Security & Integration
+	implementation libs.springBootOAuth2Resource
+	implementation libs.springCloudOpenFeign
+
+	// --- Data & Persistence ---
+	implementation libs.springBootDataJpa
+	implementation libs.postgreSQL
+
+	// --- Elasticsearch (CQRS Read Side) ---
+	implementation libs.springBootDataElastic
+
+	// --- Migrations ---
+	implementation libs.flywayCore
+	implementation libs.flywayPostgres
+
+	// --- Validation ---
+	implementation libs.validation
+	implementation libs.logback
+	implementation libs.logstashEncoder
+
+	implementation libs.springBootRabbit
+
+
+	// --- Lombok ---
+	compileOnly libs.lombok
+	annotationProcessor libs.lombok
+
+	// --- Test ---
+	testImplementation libs.testStarter
+	testImplementation libs.testcontainers
+	testImplementation libs.testcontainersJunit
+	testImplementation libs.testcontainersPostgres
+	testImplementation libs.testcontainersElastic
+	testImplementation 'org.postgresql:postgresql'
+	testImplementation libs.junit
+	testImplementation 'org.testcontainers:mysql'
+
+
+}
+

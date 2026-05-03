@@ -1,0 +1,88 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:payment_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      connection-timeout: 20000
+      pool-name: PaymentServiceHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_batch_fetch_size: 20
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          multiplier: 2.0
+        prefetch: 10
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000
+        max-attempts: 3
+
+iyzico:
+  api-key: ${IYZICO_API_KEY:sandbox-a7XquXzhDm3e4HjGjfHmwBYsVKTHmDVO}
+  secret-key: ${IYZICO_SECRET_KEY:sandbox-NEpCgYDfklnEBKQt5P5Enu8tJPdb3mm8}
+  base-url: https://sandbox-api.iyzipay.com
+
+messaging:
+  exchanges:
+    payment: payment.events
+    order: order.events
+  queues:
+    payment-requested: payment.payment.requested.queue
+  routing-keys:
+    payment-requested: payment.requested
+    payment-completed: payment.completed
+    payment-failed: payment.failed
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org.n11bootcamp.paymentservice: DEBUG
+    org.hibernate.SQL: INFO
+    root: INFO

@@ -1,0 +1,23 @@
+dependencies {
+    // Web & Serialization
+    implementation libs.springBootStarterWeb
+    implementation libs.jacksonDatabind
+    implementation libs.jacksonDatatypeJsr310
+
+    // Messaging & Communication
+    implementation libs.springBootRabbit
+    implementation libs.springBootStarterMail
+
+    // Security & Monitoring
+    implementation libs.springBootStarterSecurity
+    implementation libs.springBootActuator
+    implementation libs.logstashEncoder
+    implementation libs.springBootDataRedis
+
+    // Boilerplate (Lombok)
+    compileOnly         libs.lombok
+    annotationProcessor libs.lombok
+
+    // Test
+    testImplementation libs.testStarter
+}

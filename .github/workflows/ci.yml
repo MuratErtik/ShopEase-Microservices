@@ -1,0 +1,241 @@
+name: CI – PR to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      api-gateway:           ${{ steps.filter.outputs.api-gateway }}
+      cart-service:          ${{ steps.filter.outputs.cart-service }}
+      inventory-service:     ${{ steps.filter.outputs.inventory-service }}
+      notification-service:  ${{ steps.filter.outputs.notification-service }}
+      order-service:         ${{ steps.filter.outputs.order-service }}
+      payment-service:       ${{ steps.filter.outputs.payment-service }}
+      product-service:       ${{ steps.filter.outputs.product-service }}
+      user-service:          ${{ steps.filter.outputs.user-service }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+            cart-service:
+              - 'cart-service/**'
+            inventory-service:
+              - 'inventory-service/**'
+            notification-service:
+              - 'notification-service/**'
+            order-service:
+              - 'order-service/**'
+            payment-service:
+              - 'payment-service/**'
+            product-service:
+              - 'product-service/**'
+            user-service:
+              - 'user-service/**'
+
+  test-api-gateway:
+    name: Test – api-gateway
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-gateway == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :api-gateway:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-gateway-test-report
+          path: api-gateway/build/reports/tests/test/
+          retention-days: 14
+
+  test-cart-service:
+    name: Test – cart-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cart-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :cart-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-service-test-report
+          path: cart-service/build/reports/tests/test/
+          retention-days: 14
+
+  test-inventory-service:
+    name: Test – inventory-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.inventory-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :inventory-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-service-test-report
+          path: inventory-service/build/reports/tests/test/
+          retention-days: 14
+
+  test-notification-service:
+    name: Test – notification-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :notification-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-service-test-report
+          path: notification-service/build/reports/tests/test/
+          retention-days: 14
+
+  test-order-service:
+    name: Test – order-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.order-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :order-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: order-service-test-report
+          path: order-service/build/reports/tests/test/
+          retention-days: 14
+
+  test-payment-service:
+    name: Test – payment-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.payment-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :payment-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-service-test-report
+          path: payment-service/build/reports/tests/test/
+          retention-days: 14
+
+  test-product-service:
+    name: Test – product-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.product-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :product-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-service-test-report
+          path: product-service/build/reports/tests/test/
+          retention-days: 14
+
+  test-user-service:
+    name: Test – user-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :user-service:test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: user-service-test-report
+          path: user-service/build/reports/tests/test/
+          retention-days: 14

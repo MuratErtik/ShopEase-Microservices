@@ -55,7 +55,7 @@ jib {
         image = 'eclipse-temurin:21-jre-alpine'  // base image
     }
     to {
-        image = 'ghcr.io/MuratErtik/api-gateway'
+        image = 'ghcr.io/MuratErtik/payment-service'
         tags = ['latest', "${project.version}"]
         auth {
             username = System.getenv('REGISTRY_USERNAME')

@@ -1,0 +1,201 @@
+name: CD – Push to main
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      api-gateway:           ${{ steps.filter.outputs.api-gateway }}
+      cart-service:          ${{ steps.filter.outputs.cart-service }}
+      inventory-service:     ${{ steps.filter.outputs.inventory-service }}
+      notification-service:  ${{ steps.filter.outputs.notification-service }}
+      order-service:         ${{ steps.filter.outputs.order-service }}
+      payment-service:       ${{ steps.filter.outputs.payment-service }}
+      product-service:       ${{ steps.filter.outputs.product-service }}
+      user-service:          ${{ steps.filter.outputs.user-service }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+            cart-service:
+              - 'cart-service/**'
+            inventory-service:
+              - 'inventory-service/**'
+            notification-service:
+              - 'notification-service/**'
+            order-service:
+              - 'order-service/**'
+            payment-service:
+              - 'payment-service/**'
+            product-service:
+              - 'product-service/**'
+            user-service:
+              - 'user-service/**'
+
+  build-api-gateway:
+    name: Build & Push – api-gateway
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-gateway == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :api-gateway:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-cart-service:
+    name: Build & Push – cart-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cart-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :cart-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-inventory-service:
+    name: Build & Push – inventory-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.inventory-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :inventory-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-notification-service:
+    name: Build & Push – notification-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :notification-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-order-service:
+    name: Build & Push – order-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.order-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :order-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-payment-service:
+    name: Build & Push – payment-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.payment-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :payment-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-product-service:
+    name: Build & Push – product-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.product-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :product-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  build-user-service:
+    name: Build & Push – user-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+      - run: chmod +x gradlew
+      - name: Build & Push image via Jib
+        run: ./gradlew :user-service:jib
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}

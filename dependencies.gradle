@@ -1,0 +1,72 @@
+ext {
+    versions = [
+            springBoot : '3.5.13',
+            springCloud: '2025.0.0',
+            postgreSQL : '42.7.4',
+            lombok     : '1.18.36',
+            validation : '3.1.1',
+            swagger    : '2.8.5',
+            keycloak   : '24.0.0',
+            logstash   : '7.4',
+    ]
+
+    libs = [
+            // Web
+            springBootStarterWeb         : "org.springframework.boot:spring-boot-starter-web",
+            swaggerui                    : "org.springdoc:springdoc-openapi-starter-webmvc-ui:${versions.swagger}",
+
+            //JPA
+            springBootDataJpa            : "org.springframework.boot:spring-boot-starter-data-jpa",
+            springBootDataRedis          : "org.springframework.boot:spring-boot-starter-data-redis",
+            springBootDataMongo          : "org.springframework.boot:spring-boot-starter-data-mongodb",
+            springBootDataElastic        : "org.springframework.boot:spring-boot-starter-data-elasticsearch",
+            postgreSQL                   : "org.postgresql:postgresql:${versions.postgreSQL}",
+
+            keycloakAdminClient          : "org.keycloak:keycloak-admin-client:${versions.keycloak}",
+            springBootWebflux            : "org.springframework.boot:spring-boot-starter-webflux",
+
+
+            // Flyway
+            flywayCore                   : "org.flywaydb:flyway-core",
+            flywayPostgres               : "org.flywaydb:flyway-database-postgresql",
+
+            // Gateway ve Reactive
+            springCloudGateway           : "org.springframework.cloud:spring-cloud-starter-gateway-server-webflux",
+            springBootOAuth2Resource     : "org.springframework.boot:spring-boot-starter-oauth2-resource-server",
+            springBootDataRedisReactive  : "org.springframework.boot:spring-boot-starter-data-redis-reactive",
+            springCloudCircuitBreaker    : "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j",
+
+            // All
+            springBootActuator           : "org.springframework.boot:spring-boot-starter-actuator",
+            micrometerPrometheus         : "io.micrometer:micrometer-registry-prometheus",
+            springCloudOpenFeign         : "org.springframework.cloud:spring-cloud-starter-openfeign",
+            lombok                       : "org.projectlombok:lombok:${versions.lombok}",
+            validation                   : "org.springframework.boot:spring-boot-starter-validation",
+            springBootRabbit             : "org.springframework.boot:spring-boot-starter-amqp",
+            jacksonDatabind              : "com.fasterxml.jackson.core:jackson-databind",
+            jacksonDatatypeJsr310        : "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
+
+            // Mail
+            springBootStarterMail        : "org.springframework.boot:spring-boot-starter-mail",
+
+            // Security
+            springBootStarterSecurity    : "org.springframework.boot:spring-boot-starter-security",
+
+            logstashEncoder              : "net.logstash.logback:logstash-logback-encoder:${versions.logstash}",
+
+            // Test
+            testStarter                  : "org.springframework.boot:spring-boot-starter-test",
+            springSecurityTest           : "org.springframework.security:spring-security-test:6.5.0",
+            reactorTest                  : "io.projectreactor:reactor-test",
+            testcontainers               : "org.springframework.boot:spring-boot-testcontainers",
+            testcontainersJunit          : "org.testcontainers:junit-jupiter",
+            testcontainersPostgres       : "org.testcontainers:postgresql",
+            testcontainersElastic        : "org.testcontainers:elasticsearch",
+            wireMock                     : "org.wiremock:wiremock-standalone:3.10.0",
+            logback                      : "ch.qos.logback:logback-classic",
+            junit                        : "org.junit.jupiter:junit-jupiter"
+
+
+
+    ]
+}

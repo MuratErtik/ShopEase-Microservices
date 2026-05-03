@@ -1,0 +1,37 @@
+dependencies {
+    // Web
+    implementation libs.springBootStarterWeb
+    implementation libs.swaggerui
+
+    // Redis
+    implementation libs.springBootDataRedis
+
+    // Feign
+    implementation libs.springCloudOpenFeign
+
+    implementation libs.springBootRabbit
+
+    // Keycloak — token validation gateway'den geçiyorsa sadece resource server yeterli
+    implementation libs.springBootOAuth2Resource
+
+    // Monitoring
+    implementation libs.springBootActuator
+    implementation libs.micrometerPrometheus
+    implementation libs.logstashEncoder
+
+    // Util
+    compileOnly     libs.lombok
+    annotationProcessor libs.lombok
+    implementation  libs.validation
+    implementation  libs.swaggerui
+
+    // Test
+    testImplementation libs.testStarter
+    testImplementation libs.springSecurityTest
+    testImplementation libs.testcontainers
+    testImplementation libs.testcontainersJunit
+    //testImplementation libs.testcontainersRedis
+    testImplementation libs.wireMock
+    testCompileOnly     libs.lombok
+    testAnnotationProcessor libs.lombok
+}

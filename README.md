@@ -1,4 +1,4 @@
-# ShopEase — E-Commerce Microservices Platform
+# n11 Bootcamp
 
 > N11 Bootcamp bitirme projesi olarak geliştirilmiş, production-ready tasarım kalıpları içeren tam kapsamlı bir e-ticaret platformu.
 

@@ -1,0 +1,30 @@
+
+//spring api gateway is based on reactive module thats why using that conf and block tomcat
+configurations.all {
+	exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
+	exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+	exclude group: 'org.springdoc',            module: 'springdoc-openapi-starter-webmvc-ui'
+}
+
+dependencies {
+	implementation libs.springCloudGateway
+	implementation libs.springBootOAuth2Resource
+	implementation libs.springBootDataRedisReactive
+	implementation libs.springCloudCircuitBreaker
+
+	implementation libs.springBootActuator
+	implementation libs.micrometerPrometheus
+
+	implementation libs.logstashEncoder
+
+	compileOnly         libs.lombok
+	annotationProcessor libs.lombok
+
+
+	testImplementation libs.testStarter
+	testImplementation libs.reactorTest
+	testImplementation libs.testcontainers
+	testImplementation libs.testcontainersJunit
+	testImplementation libs.springSecurityTest
+	testImplementation libs.wireMock
+}

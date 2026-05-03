@@ -1,0 +1,207 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-gateway
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 2s
+      timeout: 1s
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/n11Ecommerce
+          jwk-set-uri: http://localhost:8080/realms/n11Ecommerce/protocol/openid-connect/certs
+
+  # Gateway Routes
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 5000
+            response-timeout: 10s
+          routes:
+
+                    - id: product-service
+                      uri: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+                      predicates:
+                        - Path=/api/v1/products/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: product-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+#                        - name: RequestRateLimiter
+#                          args:
+#                            redis-rate-limiter.replenishRate: 20
+#                            redis-rate-limiter.burstCapacity: 40
+#                            redis-rate-limiter.requestedTokens: 1
+
+
+                    - id: inventory-service
+                      uri: ${INVENTORY_SERVICE_URL:http://localhost:8083}
+                      predicates:
+                        - Path=/api/v1/inventories/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: inventory-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+#                        - name: RequestRateLimiter
+#                          args:
+#                            redis-rate-limiter.replenishRate: 20
+#                            redis-rate-limiter.burstCapacity: 40
+#                            redis-rate-limiter.requestedTokens: 1
+
+                    - id: cart-service
+                      uri: ${CART_SERVICE_URL:http://localhost:8084}
+                      predicates:
+                        - Path=/api/v1/cart/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: cart-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+#                        - name: RequestRateLimiter
+#                          args:
+#                            redis-rate-limiter.replenishRate: 10
+#                            redis-rate-limiter.burstCapacity: 20
+#                            redis-rate-limiter.requestedTokens: 1
+
+                    - id: order-service
+                      uri: ${ORDER_SERVICE_URL:http://localhost:8085}
+                      predicates:
+                        - Path=/api/v1/orders/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: order-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+#                        - name: RequestRateLimiter
+#                          args:
+#                            redis-rate-limiter.replenishRate: 10
+#                            redis-rate-limiter.burstCapacity: 20
+#                            redis-rate-limiter.requestedTokens: 1
+
+                    - id: payment-service
+                      uri: ${PAYMENT_SERVICE_URL:http://localhost:8086}
+                      predicates:
+                        - Path=/api/v1/payments/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: payment-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+#                        - name: RequestRateLimiter
+#                          args:
+#                            redis-rate-limiter.replenishRate: 5
+#                            redis-rate-limiter.burstCapacity: 10
+#                            redis-rate-limiter.requestedTokens: 1
+
+
+                    - id: user-service
+                      uri: ${USER_SERVICE_URL:http://localhost:8087}
+                      predicates:
+                        - Path=/api/v1/users/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: user-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+#                        - name: RequestRateLimiter
+#                          args:
+#                            redis-rate-limiter.replenishRate: 10
+#                            redis-rate-limiter.burstCapacity: 20
+#                            redis-rate-limiter.requestedTokens: 1
+
+
+                    - id: notification-service
+                      uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8088}
+                      predicates:
+                        - Path=/api/v1/notifications/**
+                      filters:
+                        - name: CircuitBreaker
+                          args:
+                            name: notification-service-cb
+                            fallbackUri: forward:/fallback/service-unavailable
+
+
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+# Circuit Breaker
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      product-service-cb:
+        baseConfig: default
+      inventory-service-cb:
+        baseConfig: default
+      cart-service-cb:
+        baseConfig: default
+      order-service-cb:
+        baseConfig: default
+      payment-service-cb:
+        slidingWindowSize: 5
+        failureRateThreshold: 30
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 2
+        registerHealthIndicator: true
+      user-service-cb:
+        baseConfig: default
+      notification-service-cb:
+        baseConfig: default
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 10s
+        cancelRunningFuture: true
+    instances:
+      user-service-cb:
+        timeoutDuration: 10s
+      product-service-cb:
+        timeoutDuration: 10s
+      order-service-cb:
+        timeoutDuration: 10s
+      payment-service-cb:
+        timeoutDuration: 15s
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        # for K8s liveness/readiness
+        enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: INFO
+    org.n11bootcamp.apigateway : DEBUG
+    root: INFO

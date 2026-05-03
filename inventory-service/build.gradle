@@ -1,0 +1,35 @@
+dependencies {
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootActuator
+    implementation libs.swaggerui
+
+    implementation libs.springBootOAuth2Resource
+    implementation libs.springCloudOpenFeign
+
+    implementation libs.springBootDataJpa
+    implementation libs.postgreSQL
+
+
+    implementation libs.springBootRabbit
+
+    implementation libs.flywayCore
+    implementation libs.flywayPostgres
+    implementation libs.logstashEncoder
+
+    implementation libs.validation
+    implementation libs.logback
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    testImplementation libs.testStarter
+    testImplementation libs.testcontainers
+    testImplementation libs.testcontainersJunit
+    testImplementation libs.testcontainersPostgres
+    testImplementation 'org.postgresql:postgresql'
+    testImplementation libs.junit
+    testImplementation 'org.testcontainers:mysql'
+
+
+}
+

@@ -1,0 +1,1 @@
+ALTER TABLE inventories ADD COLUMN seller_email VARCHAR(255);

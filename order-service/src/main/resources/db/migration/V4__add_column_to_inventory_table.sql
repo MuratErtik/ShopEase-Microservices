@@ -1,0 +1,2 @@
+ALTER TABLE orders ADD COLUMN seller_email VARCHAR(255);
+ALTER TABLE orders ADD COLUMN buyer_email VARCHAR(255);

@@ -1,0 +1,33 @@
+dependencies {
+    // Web & HTTP Clients
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootWebflux        // Keycloak token endpoint istekleri için
+    implementation libs.springCloudOpenFeign
+    implementation libs.swaggerui
+
+    // Database & Migration
+    implementation libs.springBootDataJpa
+    implementation libs.postgreSQL
+    implementation libs.flywayCore
+    implementation libs.flywayPostgres
+
+    // Security & Auth
+    implementation libs.springBootOAuth2Resource
+    implementation libs.keycloakAdminClient      // Keycloak Admin REST API client
+
+    // Core & Monitoring
+    implementation libs.springBootActuator
+    implementation libs.validation
+    implementation libs.logstashEncoder
+
+    // Boilerplate (Lombok)
+    compileOnly         libs.lombok
+    annotationProcessor libs.lombok
+
+
+    // Test
+    testImplementation libs.testStarter
+    testImplementation libs.testcontainers
+    testImplementation libs.testcontainersJunit
+    testImplementation libs.testcontainersPostgres
+}

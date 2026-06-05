@@ -1,6 +1,6 @@
 # n11 Bootcamp
 
-> N11 Bootcamp bitirme projesi olarak geliştirilmiş, production-ready tasarım kalıpları içeren tam kapsamlı bir e-ticaret platformu.
+> A comprehensive e-commerce platform developed as the n11 Bootcamp capstone project, featuring production-ready design patterns.
 
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.13-brightgreen)](https://spring.io/projects/spring-boot)
@@ -8,50 +8,50 @@
 
 ---
 
-## İçindekiler
+## Table of Contents
 
-- [Genel Bakış](#genel-bakış)
-- [Mimari](#mimari)
-- [Servisler](#servisler)
-- [Tasarım Kalıpları](#tasarım-kalıpları)
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Services](#services)
+- [Design Patterns](#design-patterns)
   - [Saga Pattern](#saga-pattern)
   - [CQRS](#cqrs)
   - [Outbox Pattern](#outbox-pattern)
   - [Circuit Breaker](#circuit-breaker)
-- [Teknoloji Yığını](#teknoloji-yığını)
-- [Altyapı](#altyapı)
+- [Technology Stack](#technology-stack)
+- [Infrastructure](#infrastructure)
 - [API Gateway](#api-gateway)
 - [Config Server](#config-server)
-- [Kimlik Doğrulama — Keycloak](#kimlik-doğrulama--keycloak)
-- [Veritabanı Migrasyonu — Flyway](#veritabanı-migrasyonu--flyway)
-- [Loglama — Logstash & ELK](#loglama--logstash--elk)
+- [Authentication — Keycloak](#authentication--keycloak)
+- [Database Migration — Flyway](#database-migration--flyway)
+- [Logging — Logstash & ELK](#logging--logstash--elk)
 - [TDD](#tdd)
 - [CI/CD — GitHub Actions](#cicd--github-actions)
 - [Container Build — Jib](#container-build--jib)
-- [Kurulum](#kurulum)
+- [Setup](#setup)
 
 ---
 
-## Genel Bakış
+## Overview
 
-ShopEase; ürün listeleme, sepet yönetimi, sipariş işleme ve ödeme akışlarını kapsayan event-driven bir e-ticaret platformudur. Tüm servisler birbirinden bağımsız deploy edilebilir, ayrı veritabanlarına sahiptir ve RabbitMQ üzerinden asenkron mesajlaşır.
+ShopEase is an event-driven e-commerce platform covering product listing, cart management, order processing, and payment flows. All services are independently deployable, have their own dedicated databases, and communicate asynchronously via RabbitMQ.
 
-**Temel Özellikler:**
+**Key Features:**
 
-- Rol tabanlı kimlik doğrulama (USER / SELLER) — Keycloak OAuth2 / JWT
-- Elasticsearch üzerinde tam metin ürün arama
-- Redis ile sepet kalıcılığı ve idempotency kontrolü
-- RabbitMQ üzerinden choreography-based Saga ile dağıtık işlem yönetimi
-- Transactional Outbox ile guaranteed message delivery
-- Resilience4j Circuit Breaker ile hata yalıtımı
-- Spring Cloud Config Server ile merkezi konfigürasyon yönetimi
-- Flyway ile sürümlü veritabanı migrasyonu
-- Logstash entegrasyonlu merkezi loglama
-- Jib ile Dockerfile gerektirmeyen Docker image build
+- Role-based authentication (USER / SELLER) — Keycloak OAuth2 / JWT
+- Full-text product search powered by Elasticsearch
+- Cart persistence and idempotency control via Redis
+- Distributed transaction management via choreography-based Saga over RabbitMQ
+- Guaranteed message delivery through the Transactional Outbox pattern
+- Fault isolation with Resilience4j Circuit Breaker
+- Centralized configuration management via Spring Cloud Config Server
+- Versioned database migrations with Flyway
+- Centralized logging with Logstash integration
+- Dockerfile-free Docker image builds with Jib
 
 ---
 
-## Mimari
+## Architecture
 
 ```
                           ┌─────────────────────────────────────┐
@@ -92,32 +92,32 @@ ShopEase; ürün listeleme, sepet yönetimi, sipariş işleme ve ödeme akışla
 
 ---
 
-## Servisler
+## Services
 
-| Servis                   | Port | Veritabanı                 | Sorumluluk                                             |
+| Service                  | Port | Database                   | Responsibility                                         |
 | ------------------------ | ---- | -------------------------- | ------------------------------------------------------ |
-| **api-gateway**          | 8081 | Redis                      | Routing, JWT doğrulama, Circuit Breaker, Rate Limiting |
-| **product-service**      | 8082 | PostgreSQL + Elasticsearch | Ürün CRUD (Write: PG · Read: ES)                       |
-| **inventory-service**    | 8083 | PostgreSQL                 | Stok yönetimi, rezervasyon, serbest bırakma            |
-| **cart-service**         | 8084 | Redis                      | Sepet CRUD, stok kontrolü (TTL: 30 dk)                 |
-| **order-service**        | 8085 | PostgreSQL                 | Sipariş oluşturma, Saga koordinasyonu                  |
-| **payment-service**      | 8086 | PostgreSQL                 | Ödeme işleme, kart doğrulama                           |
-| **user-service**         | 8087 | PostgreSQL                 | Kayıt, giriş, Keycloak entegrasyonu                    |
-| **notification-service** | 8088 | Redis (idempotency)        | E-posta bildirimleri — alıcı & satıcı                  |
-| **config-server**        | 8888 | Git Repository             | Merkezi konfigürasyon dağıtımı                         |
+| **api-gateway**          | 8081 | Redis                      | Routing, JWT validation, Circuit Breaker, Rate Limiting |
+| **product-service**      | 8082 | PostgreSQL + Elasticsearch | Product CRUD (Write: PG · Read: ES)                    |
+| **inventory-service**    | 8083 | PostgreSQL                 | Stock management, reservation, release                 |
+| **cart-service**         | 8084 | Redis                      | Cart CRUD, stock validation (TTL: 30 min)              |
+| **order-service**        | 8085 | PostgreSQL                 | Order creation, Saga coordination                      |
+| **payment-service**      | 8086 | PostgreSQL                 | Payment processing, card validation                    |
+| **user-service**         | 8087 | PostgreSQL                 | Registration, login, Keycloak integration              |
+| **notification-service** | 8088 | Redis (idempotency)        | Email notifications — buyer & seller                   |
+| **config-server**        | 8888 | Git Repository             | Centralized configuration distribution                 |
 
 ---
 
-## Tasarım Kalıpları
+## Design Patterns
 
 ### Saga Pattern
 
-Sipariş oluşturma akışı, merkezi bir orkestratör olmadan **Choreography-based Saga** ile yönetilir. Her servis kendi domain event'ini yayımlar; diğer servisler bu event'leri dinleyerek tepki verir.
+The order creation flow is managed using a **Choreography-based Saga** without a central orchestrator. Each service publishes its own domain event; other services listen to these events and react accordingly.
 
-#### Başarılı Sipariş Akışı
+#### Successful Order Flow
 
 ```
-Kullanıcı          Order Svc          Inventory Svc       Payment Svc      Notification Svc
+User               Order Svc          Inventory Svc       Payment Svc      Notification Svc
    │                   │                    │                   │                  │
    │── POST /orders ──►│                    │                   │                  │
    │                   │ Save(PENDING)       │                   │                  │
@@ -138,22 +138,22 @@ Kullanıcı          Order Svc          Inventory Svc       Payment Svc      Not
    │◄─ 201 Created ────│                    │                   │                  │
 ```
 
-#### Başarısız Akışlar (Compensating Transactions)
+#### Failure Flows (Compensating Transactions)
 
 ```
-Stok Rezervasyon Hatası:
-  OrderCreatedEvent → Inventory Svc [yetersiz stok]
+Stock Reservation Failure:
+  OrderCreatedEvent → Inventory Svc [insufficient stock]
                     → StockReservationFailedEvent
                     → Order Svc: status = CANCELLED ✗
 
-Ödeme Hatası:
-  PaymentRequestedEvent → Payment Svc [kart reddedildi]
+Payment Failure:
+  PaymentRequestedEvent → Payment Svc [card declined]
                         → PaymentFailedEvent
                         → Order Svc: status = CANCELLED ✗
-                        → StockReleasedEvent → Inventory Svc (rezervasyon geri alınır)
+                        → StockReleasedEvent → Inventory Svc (reservation rolled back)
 ```
 
-#### RabbitMQ Exchange & Queue Yapısı
+#### RabbitMQ Exchange & Queue Structure
 
 ```
 Exchanges:
@@ -176,7 +176,7 @@ Routing Keys:
 
 ### CQRS
 
-**Product Service** okuma ve yazma modellerini tamamen ayırır:
+The **Product Service** fully separates its read and write models:
 
 ```
 Write Side (Command)                    Read Side (Query)
@@ -185,112 +185,112 @@ ProductCommandService                   ProductQueryService
        │                                        │
        ▼                                        ▼
   PostgreSQL                            Elasticsearch
-  (kaynak gerçek)                    (arama & listeleme)
+  (source of truth)                  (search & listing)
        │
        │ OutboxEvent
        ▼
  ElasticsearchOutboxHandler
-       │ (asenkron senkronizasyon)
+       │ (async synchronization)
        ▼
   Elasticsearch Index
 ```
 
-- **Create / Update / Delete** → PostgreSQL'e yazılır, OutboxEvent oluşturulur
-- **Search / List / Filter** → Elasticsearch'ten okunur (tam metin arama, kategori filtresi, fiyat aralığı)
-- Elasticsearch'te bulunmayan ürün için PostgreSQL'e **fallback** mekanizması mevcuttur
+- **Create / Update / Delete** → written to PostgreSQL, an OutboxEvent is created
+- **Search / List / Filter** → read from Elasticsearch (full-text search, category filter, price range)
+- A **fallback** mechanism to PostgreSQL is in place for products not found in Elasticsearch
 
 ---
 
 ### Outbox Pattern
 
-Her servis, dış sistemlere mesaj göndermeden önce aynı DB transaction'ı içinde `outbox_events` tablosuna kaydeder. Ayrı bir `OutboxProcessorService` bu kayıtları poll ederek RabbitMQ'ya iletir. Bu sayede **at-least-once delivery** ve **veri tutarlılığı** garanti altına alınır.
+Before sending messages to external systems, each service saves them to an `outbox_events` table within the same DB transaction. A separate `OutboxProcessorService` polls these records and delivers them to RabbitMQ, ensuring **at-least-once delivery** and **data consistency**.
 
 ```
 Service Method (Transactional)
-  ├─ domain_table'a kaydet
-  └─ outbox_events'e kaydet    ← aynı transaction
+  ├─ write to domain_table
+  └─ write to outbox_events    ← same transaction
 
 OutboxProcessorService (Scheduled)
-  └─ status=PENDING kayıtları çek
-     └─ RabbitMQ'ya publish et
-        └─ status=PUBLISHED güncelle
+  └─ fetch records with status=PENDING
+     └─ publish to RabbitMQ
+        └─ update status=PUBLISHED
 ```
 
-Her servis kendi `outbox_events` tablosunu yönetir:
+Each service manages its own `outbox_events` table:
 
-- `product-service` → Elasticsearch sync event'leri
-- `inventory-service` → StockReserved / StockReleased event'leri
-- `order-service` → OrderCreated / PaymentRequested / OrderConfirmed event'leri
-- `payment-service` → PaymentCompleted / PaymentFailed event'leri
+- `product-service` → Elasticsearch sync events
+- `inventory-service` → StockReserved / StockReleased events
+- `order-service` → OrderCreated / PaymentRequested / OrderConfirmed events
+- `payment-service` → PaymentCompleted / PaymentFailed events
 
 ---
 
 ### Circuit Breaker
 
-API Gateway, Resilience4j ile her downstream servise karşı **Circuit Breaker** uygular.
+The API Gateway applies a **Circuit Breaker** against each downstream service using Resilience4j.
 
 ```
-İstek Akışı:
+Request Flow:
   Client → Gateway → [Circuit Breaker] → Downstream Service
 
-Durum Makinesi:
-  CLOSED ──(hata oranı > eşik)──► OPEN ──(10s bekle)──► HALF-OPEN
-    ▲                                                         │
-    └──────────────(test istekleri başarılı)──────────────────┘
+State Machine:
+  CLOSED ──(error rate > threshold)──► OPEN ──(wait 10s)──► HALF-OPEN
+    ▲                                                              │
+    └──────────────(test requests successful)─────────────────────┘
                                   │
-                         (test istekleri başarısız)
+                         (test requests failed)
                                   │
                                   ▼
                                 OPEN
 ```
 
-| Parametre                | Varsayılan | Payment |
-| ------------------------ | ---------- | ------- |
-| Sliding Window           | 10 istek   | 5 istek |
-| Hata Eşiği               | %50        | %30     |
-| Open → Half-Open Süresi  | 10s        | 30s     |
-| Half-Open Test İstekleri | 3          | 2       |
-| Timeout                  | 10s        | 15s     |
+| Parameter                | Default    | Payment  |
+| ------------------------ | ---------- | -------- |
+| Sliding Window           | 10 requests | 5 requests |
+| Error Threshold          | 50%        | 30%      |
+| Open → Half-Open Wait    | 10s        | 30s      |
+| Half-Open Test Requests  | 3          | 2        |
+| Timeout                  | 10s        | 15s      |
 
-Hata durumunda `/fallback/service-unavailable` endpoint'ine yönlendirilir ve kullanıcıya anlamlı bir hata mesajı döner.
+On failure, requests are redirected to the `/fallback/service-unavailable` endpoint, returning a meaningful error message to the client.
 
 ---
 
-## Teknoloji Yığını
+## Technology Stack
 
 ### Backend
 
-| Kategori          | Teknoloji                                         |
+| Category          | Technology                                        |
 | ----------------- | ------------------------------------------------- |
 | Framework         | Spring Boot 3.5.13, Spring Cloud 2025.0.0         |
-| Dil               | Java 21                                           |
+| Language          | Java 21                                           |
 | Build             | Gradle (multi-module)                             |
 | Gateway           | Spring Cloud Gateway (WebFlux)                    |
-| Güvenlik          | Spring Security, OAuth2 Resource Server, Keycloak |
-| Mesajlaşma        | Spring AMQP (RabbitMQ)                            |
+| Security          | Spring Security, OAuth2 Resource Server, Keycloak |
+| Messaging         | Spring AMQP (RabbitMQ)                            |
 | Cache             | Spring Data Redis (Lettuce)                       |
-| Arama             | Spring Data Elasticsearch 8.12                    |
-| Veritabanı        | Spring Data JPA, PostgreSQL                       |
-| Migrasyon         | Flyway                                            |
+| Search            | Spring Data Elasticsearch 8.12                    |
+| Database          | Spring Data JPA, PostgreSQL                       |
+| Migration         | Flyway                                            |
 | Resilience        | Resilience4j (Circuit Breaker, Time Limiter)      |
-| Loglama           | Logback, Logstash Encoder 7.4                     |
+| Logging           | Logback, Logstash Encoder 7.4                     |
 | Container         | Jib 3.4.4                                         |
-| Test              | JUnit 5, Testcontainers, WireMock                 |
-| API Dokümantasyon | SpringDoc OpenAPI 2.8.5                           |
+| Testing           | JUnit 5, Testcontainers, WireMock                 |
+| API Documentation | SpringDoc OpenAPI 2.8.5                           |
 
 ### Frontend
 
-| Kategori  | Teknoloji             |
+| Category  | Technology            |
 | --------- | --------------------- |
 | Framework | React 18 (Vite)       |
-| Stil      | Tailwind CSS          |
-| HTTP      | Fetch API (axios yok) |
+| Styling   | Tailwind CSS          |
+| HTTP      | Fetch API (no axios)  |
 | Routing   | React Router v6       |
-| Form      | React Hook Form       |
+| Forms     | React Hook Form       |
 
-### Altyapı
+### Infrastructure
 
-| Bileşen       | Sürüm               |
+| Component     | Version             |
 | ------------- | ------------------- |
 | PostgreSQL    | 16-alpine           |
 | Redis         | 7-alpine            |
@@ -300,49 +300,49 @@ Hata durumunda `/fallback/service-unavailable` endpoint'ine yönlendirilir ve ku
 
 ---
 
-## Altyapı
+## Infrastructure
 
-### Redis Kullanım Alanları
+### Redis Usage Areas
 
-- **Cart Service**: Sepet verisi (Hash yapısı, 30 dk TTL)
+- **Cart Service**: Cart data (Hash structure, 30 min TTL)
 - **API Gateway**: Rate Limiter token bucket state
-- **Notification Service**: İdempotency kontrolü (7 günlük TTL, tekrar e-posta gönderimi önleme)
+- **Notification Service**: Idempotency control (7-day TTL, prevents duplicate emails)
 
 ### RabbitMQ
 
-- Tüm domain event'leri `topic` exchange üzerinden iletilir
-- Consumer'lar manuel acknowledge kullanır
-- Publisher retry: initial 1s, max 3 deneme
+- All domain events are delivered over `topic` exchanges
+- Consumers use manual acknowledgment
+- Publisher retry: initial 1s, max 3 attempts
 - Consumer retry: exponential backoff (1s → 2s → 4s)
 
 ---
 
 ## API Gateway
 
-`8081` portunda çalışır. Tüm istekler buradan geçer.
+Runs on port `8081`. All requests pass through here.
 
-**Görevleri:**
+**Responsibilities:**
 
-1. **JWT Doğrulama** — Keycloak JWK Set URI üzerinden token imzası doğrulama
-2. **Yetkilendirme** — Rol tabanlı erişim kontrolü (USER / SELLER / public)
-3. **Header Enjeksiyonu** — `X-User-ID`, `X-User-Email`, `X-User-Roles` header'larını downstream servislere ekler
-4. **Circuit Breaker** — Her servis için ayrı Resilience4j konfigürasyonu
-5. **CORS** — Tüm originlere izin verir (development ortamı)
-6. **Loglama** — Her istek/cevap için correlation ID ile yapılandırılmış log
+1. **JWT Validation** — Validates token signatures via Keycloak JWK Set URI
+2. **Authorization** — Role-based access control (USER / SELLER / public)
+3. **Header Injection** — Adds `X-User-ID`, `X-User-Email`, `X-User-Roles` headers to downstream requests
+4. **Circuit Breaker** — Separate Resilience4j configuration per service
+5. **CORS** — Allows all origins (development environment)
+6. **Logging** — Structured logs with correlation ID for every request/response
 
-**Route Yapısı:**
+**Route Structure:**
 
 ```
-/api/v1/users/**        → user-service:8087
-/api/v1/products/**     → product-service:8082
-/api/v1/inventories/**  → inventory-service:8083
-/api/v1/cart/**         → cart-service:8084
-/api/v1/orders/**       → order-service:8085
-/api/v1/payments/**     → payment-service:8086
-/api/v1/notifications/**→ notification-service:8088
+/api/v1/users/**         → user-service:8087
+/api/v1/products/**      → product-service:8082
+/api/v1/inventories/**   → inventory-service:8083
+/api/v1/cart/**          → cart-service:8084
+/api/v1/orders/**        → order-service:8085
+/api/v1/payments/**      → payment-service:8086
+/api/v1/notifications/** → notification-service:8088
 ```
 
-**Açık Endpoint'ler (token gerektirmez):**
+**Public Endpoints (no token required):**
 
 ```
 POST /api/v1/users/register
@@ -357,41 +357,41 @@ GET  /actuator/health/**
 
 ## Config Server
 
-Sistem, merkezi konfigürasyon yönetimi için Spring Cloud Config Server kullanır. Backend servisleri başlangıçta konfigürasyonlarını `http://localhost:8888` adresinden alır.
+The system uses Spring Cloud Config Server for centralized configuration management. Backend services fetch their configuration from `http://localhost:8888` at startup.
 
-- **Servis Adı:** `config-server-git`
+- **Service Name:** `config-server-git`
 - **Port:** `8888`
-- **Config Kaynağı:** Git tabanlı remote repository (`config-server/src/main/resources/application.yml` içinde tanımlı)
+- **Config Source:** Git-based remote repository (defined in `config-server/src/main/resources/application.yml`)
 
 ---
 
-## Kimlik Doğrulama — Keycloak
+## Authentication — Keycloak
 
-Keycloak 24, OAuth2 / OpenID Connect kimlik sağlayıcısı olarak kullanılır.
+Keycloak 24 is used as the OAuth2 / OpenID Connect identity provider.
 
 - **Realm**: `n11Ecommerce`
 - **Client**: `ecommerce-backend` (Direct Access Grants + Service Accounts)
-- **Roller**: `USER`, `SELLER`
-- **Şifre Politikası**: min 8 karakter
-- **Token Akışı**:
-  - Access token → bellekte tutulur (`tokenStore`)
-  - Refresh token → `HttpOnly` cookie (`path: /api/v1/users`, 30 gün)
-- **JWT Claim'leri**: `realm_access.roles` → Gateway'de `ROLE_USER` / `ROLE_SELLER`'a dönüştürülür
+- **Roles**: `USER`, `SELLER`
+- **Password Policy**: min 8 characters
+- **Token Flow**:
+  - Access token → stored in memory (`tokenStore`)
+  - Refresh token → `HttpOnly` cookie (`path: /api/v1/users`, 30 days)
+- **JWT Claims**: `realm_access.roles` → converted to `ROLE_USER` / `ROLE_SELLER` at the Gateway
 
 ```
-Kullanıcı → POST /api/v1/users/login → User Service → Keycloak
-                                                          │
-                                              access_token + refresh_token
-                                                          │
-                                        access_token → response body
-                                        refresh_token → HttpOnly cookie
+User → POST /api/v1/users/login → User Service → Keycloak
+                                                     │
+                                         access_token + refresh_token
+                                                     │
+                                     access_token → response body
+                                     refresh_token → HttpOnly cookie
 ```
 
 ---
 
-## Veritabanı Migrasyonu — Flyway
+## Database Migration — Flyway
 
-Her servis kendi PostgreSQL veritabanını kendi Flyway migrasyonlarıyla yönetir. `validate` modu ile şema uyuşmazlıklarında servis başlamaz.
+Each service manages its own PostgreSQL database through its own Flyway migrations. With `validate` mode enabled, the service will not start if there is a schema mismatch.
 
 ```
 product-service/db/migration/
@@ -420,16 +420,16 @@ payment-service/db/migration/
 
 ---
 
-## Loglama — Logstash & ELK
+## Logging — Logstash & ELK
 
-Her Java servisi **Logstash Logback Encoder** kullanarak yapılandırılmış JSON log üretir.
+Each Java service produces structured JSON logs using the **Logstash Logback Encoder**.
 
 ```
-Servis → logback-spring.xml → LogstashTcpSocketAppender → Logstash:5044
+Service → logback-spring.xml → LogstashTcpSocketAppender → Logstash:5044
                              → ConsoleAppender (stdout)
 ```
 
-**Log Yapısı:**
+**Log Structure:**
 
 ```json
 {
@@ -442,19 +442,19 @@ Servis → logback-spring.xml → LogstashTcpSocketAppender → Logstash:5044
 }
 ```
 
-API Gateway her isteğe `correlationId` ekler; bu ID tüm downstream servis loglarına yayılarak dağıtık trace imkânı sağlar.
+The API Gateway appends a `correlationId` to every request; this ID is propagated across all downstream service logs, enabling distributed tracing.
 
-> Logstash sunucusu (`localhost:5044`) çalışmıyorsa servisler stdout'a yazmaya devam eder; uygulama etkilenmez.
+> If the Logstash server (`localhost:5044`) is unavailable, services continue writing to stdout without any impact on the application.
 
 ---
 
 ## TDD
 
-Proje **Test-Driven Development** prensibiyle geliştirilmiştir. Her özellik için önce test yazılmış, ardından implementasyon yapılmıştır.
+The project was developed following **Test-Driven Development** principles. Tests were written before each implementation.
 
-**Test Kapsamı:**
+**Test Coverage:**
 
-| Servis            | Test Sınıfları                                                                                                                                         |
+| Service           | Test Classes                                                                                                                                           |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | product-service   | `ProductCommandServiceTests`, `ProductQueryServiceTest`, `ProductSearchRepositoryTest`, `ElasticsearchOutboxHandlerTest`, `OutboxProcessorServiceTest` |
 | api-gateway       | `ApiGatewayIntegrationTest`, `FallbackControllerTest`, `SecurityConfigTest`, `LoggingFilterTest`, `CorrelationIdFilterTest`                            |
@@ -464,40 +464,40 @@ Proje **Test-Driven Development** prensibiyle geliştirilmiştir. Her özellik i
 | payment-service   | `PaymentServiceApplicationTests`                                                                                                                       |
 | user-service      | `UserServiceApplicationTests`                                                                                                                          |
 
-**Test Araçları:**
+**Testing Tools:**
 
-- **JUnit 5** — birim ve entegrasyon testleri
-- **Testcontainers** — gerçek PostgreSQL, Elasticsearch, Redis container'ları ile entegrasyon testi
-- **WireMock** — Feign client mock'lama
-- **Spring Security Test** — JWT ve rol tabanlı endpoint testleri
+- **JUnit 5** — unit and integration tests
+- **Testcontainers** — integration tests with real PostgreSQL, Elasticsearch, and Redis containers
+- **WireMock** — Feign client mocking
+- **Spring Security Test** — JWT and role-based endpoint tests
 
 ---
 
 ## CI/CD — GitHub Actions
 
-`.github/workflows/ci.yml` iki aşamalı pipeline içerir:
+`.github/workflows/ci.yml` contains a two-stage pipeline:
 
-### 1. Build & Test (her push/PR)
-
-```
-push/PR → Checkout → JDK 21 kurulum → Gradle cache → ./gradlew test --parallel
-                                                               │
-                                                    Test raporları artifact olarak yüklenir
-```
-
-### 2. Jib Build & Push (sadece main branch)
+### 1. Build & Test (every push/PR)
 
 ```
-main push → [Build & Test geçtikten sonra]
+push/PR → Checkout → JDK 21 setup → Gradle cache → ./gradlew test --parallel
+                                                              │
+                                                   Test reports uploaded as artifact
+```
+
+### 2. Jib Build & Push (main branch only)
+
+```
+main push → [after Build & Test passes]
           → Docker Hub login
           → ./gradlew jib --parallel
-          → Tüm servis image'ları Docker Hub'a push edilir
+          → All service images pushed to Docker Hub
 ```
 
-**Gerekli Secrets:**
+**Required Secrets:**
 
 ```
-DOCKER_USERNAME  → Docker Hub kullanıcı adı
+DOCKER_USERNAME  → Docker Hub username
 DOCKER_PASSWORD  → Docker Hub access token
 ```
 
@@ -505,70 +505,70 @@ DOCKER_PASSWORD  → Docker Hub access token
 
 ## Container Build — Jib
 
-[Google Jib](https://github.com/GoogleContainerTools/jib) ile **Dockerfile gerektirmeyen** Docker image build süreci:
+**Dockerfile-free** Docker image build process using [Google Jib](https://github.com/GoogleContainerTools/jib):
 
-**Avantajları:**
+**Advantages:**
 
-- Tüm proje kopyalanmaz — sadece değişen layer rebuild edilir
-- Dependencies ve uygulama kodu ayrı layer'larda → bağımlılık değişmediğinde saniyeler içinde build
-- Docker daemon gerektirmez (CI ortamında sorunsuz çalışır)
-- Tekrarlanabilir build'ler
+- Only changed layers are rebuilt — the entire project is not copied
+- Dependencies and application code are in separate layers → fast builds when dependencies haven't changed
+- No Docker daemon required (works seamlessly in CI environments)
+- Reproducible builds
 
-**Kullanım:**
+**Usage:**
 
 ```bash
-# Tüm servisleri local Docker daemon'a build et
+# Build all services to local Docker daemon
 ./gradlew jibDockerBuild --parallel
 
-# Tek servis
+# Single service
 ./gradlew :cart-service:jibDockerBuild
 ./gradlew :order-service:jibDockerBuild
 
-# Registry'ye push (CI/CD)
+# Push to registry (CI/CD)
 ./gradlew jib --parallel
 ```
 
-**Image Yapılandırması** (root `build.gradle`):
+**Image Configuration** (root `build.gradle`):
 
 ```
-Base Image : eclipse-temurin:21-jre-alpine
-Image Adı  : ecommerce/{servis-adı}:latest
-JVM Flags  : -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+Base Image  : eclipse-temurin:21-jre-alpine
+Image Name  : ecommerce/{service-name}:latest
+JVM Flags   : -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 ```
 
 ---
 
-## Kurulum
+## Setup
 
-### Gereksinimler
+### Requirements
 
 - Docker & Docker Compose
-- JDK 21 (sadece local build için)
+- JDK 21 (for local builds only)
 
-### 1. Image'ları Build Et
+### 1. Build Images
 
 ```bash
-# Jib ile tüm Java servislerini build et
+# Build all Java services with Jib
 ./gradlew jibDockerBuild --parallel
 ```
 
-### 2. Servisleri Başlat
+### 2. Start Services
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Servislerin Ayağa Kalkmasını Bekle
+### 3. Wait for Services to Be Ready
 
 ```bash
 docker compose ps
 ```
 
-Keycloak'ın `healthy` durumuna geçmesi ~30 saniye sürebilir.
+Keycloak may take ~30 seconds to reach a `healthy` state.
 
-### 4. Uygulamaya Eriş
+### 4. Access the Application
 
-| Bileşen             | URL                                  |
+| Component           | URL                                  |
 | ------------------- | ------------------------------------ |
 | Frontend            | http://localhost:5173                |
 | API Gateway         | http://localhost:8081                |
@@ -576,33 +576,33 @@ Keycloak'ın `healthy` durumuna geçmesi ~30 saniye sürebilir.
 | Keycloak Admin      | http://localhost:8080 (admin/admin)  |
 | RabbitMQ Management | http://localhost:15672 (guest/guest) |
 
-### Geliştirme Sırasında Tek Servis Güncelleme
+### Updating a Single Service During Development
 
 ```bash
-# 1. Kodu değiştir
-# 2. Sadece ilgili servisi rebuild et
+# 1. Modify the code
+# 2. Rebuild only the relevant service
 ./gradlew :order-service:jibDockerBuild
 
-# 3. Yeniden başlat
+# 3. Restart
 docker compose up -d order-service
 ```
 
-### Logları İzleme
+### Monitoring Logs
 
 ```bash
-# Tüm servisler
+# All services
 docker compose logs -f
 
-# Tek servis
+# Single service
 docker compose logs -f order-service
 
-# Sadece hata logları
+# Error logs only
 docker compose logs order-service 2>&1 | grep ERROR
 ```
 
 ---
 
-## Proje Yapısı
+## Project Structure
 
 ```
 e-commerce/
@@ -610,21 +610,21 @@ e-commerce/
 │   └── workflows/
 │       └── ci.yml              # GitHub Actions CI/CD pipeline
 ├── api-gateway/                # Spring Cloud Gateway — Port 8081
-├── product-service/            # Ürün yönetimi (CQRS) — Port 8082
-├── inventory-service/          # Stok yönetimi — Port 8083
-├── cart-service/               # Sepet (Redis) — Port 8084
-├── order-service/              # Sipariş + Saga — Port 8085
-├── payment-service/            # Ödeme işleme — Port 8086
-├── user-service/               # Kimlik doğrulama — Port 8087
-├── notification-service/       # E-posta bildirimleri — Port 8088
+├── product-service/            # Product management (CQRS) — Port 8082
+├── inventory-service/          # Stock management — Port 8083
+├── cart-service/               # Cart (Redis) — Port 8084
+├── order-service/              # Order + Saga — Port 8085
+├── payment-service/            # Payment processing — Port 8086
+├── user-service/               # Authentication — Port 8087
+├── notification-service/       # Email notifications — Port 8088
 ├── config-server/              # Spring Cloud Config Server — Port 8888
 ├── frontend/                   # React + Vite — Port 5173
 ├── keycloak/
-│   └── realm-export.json       # n11Ecommerce realm konfigürasyonu
+│   └── realm-export.json       # n11Ecommerce realm configuration
 ├── build.gradle                # Root build — Jib + Spring Boot + Java
-├── settings.gradle             # Multi-module tanımları
-├── dependencies.gradle         # Merkezi bağımlılık versiyonları
-├── docker-compose.yml          # Tüm altyapı + servisler
-├── Dockerfile                  # Legacy — Jib tercih edilir
-└── init-db.sql                 # PostgreSQL veritabanı oluşturma scripti
+├── settings.gradle             # Multi-module definitions
+├── dependencies.gradle         # Centralized dependency versions
+├── docker-compose.yml          # All infrastructure + services
+├── Dockerfile                  # Legacy — Jib preferred
+└── init-db.sql                 # PostgreSQL database creation script
 ```

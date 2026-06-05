@@ -64,7 +64,10 @@ ext {
             testcontainersElastic        : "org.testcontainers:elasticsearch",
             wireMock                     : "org.wiremock:wiremock-standalone:3.10.0",
             logback                      : "ch.qos.logback:logback-classic",
-            junit                        : "org.junit.jupiter:junit-jupiter"
+            junit                        : "org.junit.jupiter:junit-jupiter",
+
+            springCloudConfig             : "org.springframework.cloud:spring-cloud-starter-config:${versions.springCloud}",
+            springCloudConfigServer       : "org.springframework.cloud:spring-cloud-config-server:${versions.springCloud}"
 
 
 

@@ -361,7 +361,7 @@ Sistem, merkezi konfigürasyon yönetimi için Spring Cloud Config Server kullan
 
 - **Servis Adı:** `config-server-git`
 - **Port:** `8888`
-- **Config Kaynağı:** `https://github.com/MuratErtik/n11ConfigServer.git`
+- **Config Kaynağı:** Git tabanlı remote repository (`config-server/src/main/resources/application.yml` içinde tanımlı)
 
 ---
 

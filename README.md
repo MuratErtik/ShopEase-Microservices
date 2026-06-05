@@ -21,6 +21,7 @@
 - [Teknoloji Yığını](#teknoloji-yığını)
 - [Altyapı](#altyapı)
 - [API Gateway](#api-gateway)
+- [Config Server](#config-server)
 - [Kimlik Doğrulama — Keycloak](#kimlik-doğrulama--keycloak)
 - [Veritabanı Migrasyonu — Flyway](#veritabanı-migrasyonu--flyway)
 - [Loglama — Logstash & ELK](#loglama--logstash--elk)
@@ -43,6 +44,7 @@ ShopEase; ürün listeleme, sepet yönetimi, sipariş işleme ve ödeme akışla
 - RabbitMQ üzerinden choreography-based Saga ile dağıtık işlem yönetimi
 - Transactional Outbox ile guaranteed message delivery
 - Resilience4j Circuit Breaker ile hata yalıtımı
+- Spring Cloud Config Server ile merkezi konfigürasyon yönetimi
 - Flyway ile sürümlü veritabanı migrasyonu
 - Logstash entegrasyonlu merkezi loglama
 - Jib ile Dockerfile gerektirmeyen Docker image build
@@ -102,6 +104,7 @@ ShopEase; ürün listeleme, sepet yönetimi, sipariş işleme ve ödeme akışla
 | **payment-service**      | 8086 | PostgreSQL                 | Ödeme işleme, kart doğrulama                           |
 | **user-service**         | 8087 | PostgreSQL                 | Kayıt, giriş, Keycloak entegrasyonu                    |
 | **notification-service** | 8088 | Redis (idempotency)        | E-posta bildirimleri — alıcı & satıcı                  |
+| **config-server**        | 8888 | Git Repository             | Merkezi konfigürasyon dağıtımı                         |
 
 ---
 
@@ -352,6 +355,16 @@ GET  /actuator/health/**
 
 ---
 
+## Config Server
+
+Sistem, merkezi konfigürasyon yönetimi için Spring Cloud Config Server kullanır. Backend servisleri başlangıçta konfigürasyonlarını `http://localhost:8888` adresinden alır.
+
+- **Servis Adı:** `config-server-git`
+- **Port:** `8888`
+- **Config Kaynağı:** `https://github.com/MuratErtik/n11ConfigServer.git`
+
+---
+
 ## Kimlik Doğrulama — Keycloak
 
 Keycloak 24, OAuth2 / OpenID Connect kimlik sağlayıcısı olarak kullanılır.
@@ -559,6 +572,7 @@ Keycloak'ın `healthy` durumuna geçmesi ~30 saniye sürebilir.
 | ------------------- | ------------------------------------ |
 | Frontend            | http://localhost:5173                |
 | API Gateway         | http://localhost:8081                |
+| Config Server       | http://localhost:8888                |
 | Keycloak Admin      | http://localhost:8080 (admin/admin)  |
 | RabbitMQ Management | http://localhost:15672 (guest/guest) |
 
@@ -603,6 +617,7 @@ e-commerce/
 ├── payment-service/            # Ödeme işleme — Port 8086
 ├── user-service/               # Kimlik doğrulama — Port 8087
 ├── notification-service/       # E-posta bildirimleri — Port 8088
+├── config-server/              # Spring Cloud Config Server — Port 8888
 ├── frontend/                   # React + Vite — Port 5173
 ├── keycloak/
 │   └── realm-export.json       # n11Ecommerce realm konfigürasyonu

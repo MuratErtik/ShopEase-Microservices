@@ -281,7 +281,7 @@ In failure cases, requests are redirected to `/fallback/service-unavailable`, an
 | --------- | -------------------- |
 | Framework | React 18 (Vite)      |
 | Styling   | Tailwind CSS         |
-| HTTP      | Fetch API (no axios) |
+| HTTP      | Fetch API            |
 | Routing   | React Router v6      |
 | Form      | React Hook Form      |
 
@@ -467,7 +467,7 @@ The project was developed with **Test-Driven Development** principles. For each 
 ### 1. Build & Test (every push/PR)
 
 ```
-push/PR → Checkout → JDK 21 setup → Gradle cache → ./gradlew test --parallel
+push/PR → Checkout → JDK 21 Setup → Gradle cache → ./gradlew test --parallel
                                                                │
                                                     Test reports uploaded as artifacts
 ```

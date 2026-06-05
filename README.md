@@ -1,6 +1,6 @@
 # n11 Bootcamp
 
-> A full e-commerce platform developed as the N11 Bootcamp graduation project, including production-ready design patterns.
+> A comprehensive e-commerce platform developed as the n11 Bootcamp capstone project, featuring production-ready design patterns.
 
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.13-brightgreen)](https://spring.io/projects/spring-boot)
@@ -21,6 +21,7 @@
 - [Technology Stack](#technology-stack)
 - [Infrastructure](#infrastructure)
 - [API Gateway](#api-gateway)
+- [Config Server](#config-server)
 - [Authentication — Keycloak](#authentication--keycloak)
 - [Database Migration — Flyway](#database-migration--flyway)
 - [Logging — Logstash & ELK](#logging--logstash--elk)
@@ -33,19 +34,20 @@
 
 ## Overview
 
-ShopEase is an event-driven e-commerce platform that includes product listing, cart management, order processing, and payment flows. All services can be deployed independently, have separate databases, and communicate asynchronously through RabbitMQ.
+ShopEase is an event-driven e-commerce platform covering product listing, cart management, order processing, and payment flows. All services are independently deployable, have their own dedicated databases, and communicate asynchronously via RabbitMQ.
 
-**Core Features:**
+**Key Features:**
 
 - Role-based authentication (USER / SELLER) — Keycloak OAuth2 / JWT
-- Full-text product search on Elasticsearch
-- Cart persistence and idempotency control with Redis
-- Distributed transaction management with choreography-based Saga over RabbitMQ
-- Guaranteed message delivery with Transactional Outbox
+- Full-text product search powered by Elasticsearch
+- Cart persistence and idempotency control via Redis
+- Distributed transaction management via choreography-based Saga over RabbitMQ
+- Guaranteed message delivery through the Transactional Outbox pattern
 - Fault isolation with Resilience4j Circuit Breaker
-- Versioned database migration with Flyway
+- Centralized configuration management via Spring Cloud Config Server
+- Versioned database migrations with Flyway
 - Centralized logging with Logstash integration
-- Docker image build without Dockerfile using Jib
+- Dockerfile-free Docker image builds with Jib
 
 ---
 
@@ -92,16 +94,17 @@ ShopEase is an event-driven e-commerce platform that includes product listing, c
 
 ## Services
 
-| Service                  | Port | Database                   | Responsibility                                              |
-| ------------------------ | ---- | -------------------------- | ----------------------------------------------------------- |
-| **api-gateway**          | 8081 | Redis                      | Routing, JWT validation, Circuit Breaker, Rate Limiting     |
-| **product-service**      | 8082 | PostgreSQL + Elasticsearch | Product CRUD (Write: PG · Read: ES)                         |
-| **inventory-service**    | 8083 | PostgreSQL                 | Stock management, reservation, release                      |
-| **cart-service**         | 8084 | Redis                      | Cart CRUD, stock check (TTL: 30 min)                        |
-| **order-service**        | 8085 | PostgreSQL                 | Order creation, Saga coordination                            |
-| **payment-service**      | 8086 | PostgreSQL                 | Payment processing, card validation                          |
-| **user-service**         | 8087 | PostgreSQL                 | Registration, login, Keycloak integration                    |
-| **notification-service** | 8088 | Redis (idempotency)        | Email notifications — buyer & seller                        |
+| Service                  | Port | Database                   | Responsibility                                         |
+| ------------------------ | ---- | -------------------------- | ------------------------------------------------------ |
+| **api-gateway**          | 8081 | Redis                      | Routing, JWT validation, Circuit Breaker, Rate Limiting |
+| **product-service**      | 8082 | PostgreSQL + Elasticsearch | Product CRUD (Write: PG · Read: ES)                    |
+| **inventory-service**    | 8083 | PostgreSQL                 | Stock management, reservation, release                 |
+| **cart-service**         | 8084 | Redis                      | Cart CRUD, stock validation (TTL: 30 min)              |
+| **order-service**        | 8085 | PostgreSQL                 | Order creation, Saga coordination                      |
+| **payment-service**      | 8086 | PostgreSQL                 | Payment processing, card validation                    |
+| **user-service**         | 8087 | PostgreSQL                 | Registration, login, Keycloak integration              |
+| **notification-service** | 8088 | Redis (idempotency)        | Email notifications — buyer & seller                   |
+| **config-server**        | 8888 | Git Repository             | Centralized configuration distribution                 |
 
 ---
 
@@ -109,12 +112,12 @@ ShopEase is an event-driven e-commerce platform that includes product listing, c
 
 ### Saga Pattern
 
-The order creation flow is managed with **choreography-based Saga** without a central orchestrator. Each service publishes its own domain event, and other services react by listening to these events.
+The order creation flow is managed using a **Choreography-based Saga** without a central orchestrator. Each service publishes its own domain event; other services listen to these events and react accordingly.
 
 #### Successful Order Flow
 
 ```
-User              Order Svc          Inventory Svc       Payment Svc      Notification Svc
+User               Order Svc          Inventory Svc       Payment Svc      Notification Svc
    │                   │                    │                   │                  │
    │── POST /orders ──►│                    │                   │                  │
    │                   │ Save(PENDING)       │                   │                  │
@@ -135,7 +138,7 @@ User              Order Svc          Inventory Svc       Payment Svc      Notifi
    │◄─ 201 Created ────│                    │                   │                  │
 ```
 
-#### Failed Flows (Compensating Transactions)
+#### Failure Flows (Compensating Transactions)
 
 ```
 Stock Reservation Failure:
@@ -147,7 +150,7 @@ Payment Failure:
   PaymentRequestedEvent → Payment Svc [card declined]
                         → PaymentFailedEvent
                         → Order Svc: status = CANCELLED ✗
-                        → StockReleasedEvent → Inventory Svc (reservation is rolled back)
+                        → StockReleasedEvent → Inventory Svc (reservation rolled back)
 ```
 
 #### RabbitMQ Exchange & Queue Structure
@@ -173,7 +176,7 @@ Routing Keys:
 
 ### CQRS
 
-**Product Service** fully separates read and write models:
+The **Product Service** fully separates its read and write models:
 
 ```
 Write Side (Command)                    Read Side (Query)
@@ -182,7 +185,7 @@ ProductCommandService                   ProductQueryService
        │                                        │
        ▼                                        ▼
   PostgreSQL                            Elasticsearch
-  (source of truth)                     (search & listing)
+  (source of truth)                  (search & listing)
        │
        │ OutboxEvent
        ▼
@@ -192,20 +195,20 @@ ProductCommandService                   ProductQueryService
   Elasticsearch Index
 ```
 
-- **Create / Update / Delete** → Written to PostgreSQL, then an OutboxEvent is created
-- **Search / List / Filter** → Read from Elasticsearch (full-text search, category filter, price range)
-- A **fallback** to PostgreSQL exists for products not found in Elasticsearch
+- **Create / Update / Delete** → written to PostgreSQL, an OutboxEvent is created
+- **Search / List / Filter** → read from Elasticsearch (full-text search, category filter, price range)
+- A **fallback** mechanism to PostgreSQL is in place for products not found in Elasticsearch
 
 ---
 
 ### Outbox Pattern
 
-Before sending messages to external systems, each service writes to the `outbox_events` table in the same DB transaction. A separate `OutboxProcessorService` polls these records and publishes them to RabbitMQ. This guarantees **at-least-once delivery** and **data consistency**.
+Before sending messages to external systems, each service saves them to an `outbox_events` table within the same DB transaction. A separate `OutboxProcessorService` polls these records and delivers them to RabbitMQ, ensuring **at-least-once delivery** and **data consistency**.
 
 ```
 Service Method (Transactional)
-  ├─ save to domain_table
-  └─ save to outbox_events    ← same transaction
+  ├─ write to domain_table
+  └─ write to outbox_events    ← same transaction
 
 OutboxProcessorService (Scheduled)
   └─ fetch records with status=PENDING
@@ -224,7 +227,7 @@ Each service manages its own `outbox_events` table:
 
 ### Circuit Breaker
 
-API Gateway applies **Circuit Breaker** to each downstream service using Resilience4j.
+The API Gateway applies a **Circuit Breaker** against each downstream service using Resilience4j.
 
 ```
 Request Flow:
@@ -232,24 +235,24 @@ Request Flow:
 
 State Machine:
   CLOSED ──(error rate > threshold)──► OPEN ──(wait 10s)──► HALF-OPEN
-    ▲                                                         │
-    └──────────────(test requests successful)─────────────────┘
+    ▲                                                              │
+    └──────────────(test requests successful)─────────────────────┘
                                   │
-                         (test requests fail)
+                         (test requests failed)
                                   │
                                   ▼
                                 OPEN
 ```
 
-| Parameter                | Default   | Payment |
-| ------------------------ | --------- | ------- |
+| Parameter                | Default    | Payment  |
+| ------------------------ | ---------- | -------- |
 | Sliding Window           | 10 requests | 5 requests |
-| Error Threshold          | 50%       | 30%     |
-| Open → Half-Open Wait    | 10s       | 30s     |
-| Half-Open Test Requests  | 3         | 2       |
-| Timeout                  | 10s       | 15s     |
+| Error Threshold          | 50%        | 30%      |
+| Open → Half-Open Wait    | 10s        | 30s      |
+| Half-Open Test Requests  | 3          | 2        |
+| Timeout                  | 10s        | 15s      |
 
-In failure cases, requests are redirected to `/fallback/service-unavailable`, and a meaningful error message is returned to the user.
+On failure, requests are redirected to the `/fallback/service-unavailable` endpoint, returning a meaningful error message to the client.
 
 ---
 
@@ -272,18 +275,18 @@ In failure cases, requests are redirected to `/fallback/service-unavailable`, an
 | Resilience        | Resilience4j (Circuit Breaker, Time Limiter)      |
 | Logging           | Logback, Logstash Encoder 7.4                     |
 | Container         | Jib 3.4.4                                         |
-| Test              | JUnit 5, Testcontainers, WireMock                 |
+| Testing           | JUnit 5, Testcontainers, WireMock                 |
 | API Documentation | SpringDoc OpenAPI 2.8.5                           |
 
 ### Frontend
 
-| Category  | Technology           |
-| --------- | -------------------- |
-| Framework | React 18 (Vite)      |
-| Styling   | Tailwind CSS         |
-| HTTP      | Fetch API            |
-| Routing   | React Router v6      |
-| Form      | React Hook Form      |
+| Category  | Technology            |
+| --------- | --------------------- |
+| Framework | React 18 (Vite)       |
+| Styling   | Tailwind CSS          |
+| HTTP      | Fetch API (no axios)  |
+| Routing   | React Router v6       |
+| Forms     | React Hook Form       |
 
 ### Infrastructure
 
@@ -307,8 +310,8 @@ In failure cases, requests are redirected to `/fallback/service-unavailable`, an
 
 ### RabbitMQ
 
-- All domain events are sent through `topic` exchange
-- Consumers use manual acknowledge
+- All domain events are delivered over `topic` exchanges
+- Consumers use manual acknowledgment
 - Publisher retry: initial 1s, max 3 attempts
 - Consumer retry: exponential backoff (1s → 2s → 4s)
 
@@ -316,27 +319,27 @@ In failure cases, requests are redirected to `/fallback/service-unavailable`, an
 
 ## API Gateway
 
-Runs on port `8081`. All requests pass through this service.
+Runs on port `8081`. All requests pass through here.
 
 **Responsibilities:**
 
-1. **JWT Validation** — validates token signatures via Keycloak JWK Set URI
-2. **Authorization** — role-based access control (USER / SELLER / public)
-3. **Header Injection** — adds `X-User-ID`, `X-User-Email`, `X-User-Roles` headers to downstream services
-4. **Circuit Breaker** — separate Resilience4j configuration for each service
-5. **CORS** — allows all origins (development environment)
-6. **Logging** — structured logs with correlation ID for each request/response
+1. **JWT Validation** — Validates token signatures via Keycloak JWK Set URI
+2. **Authorization** — Role-based access control (USER / SELLER / public)
+3. **Header Injection** — Adds `X-User-ID`, `X-User-Email`, `X-User-Roles` headers to downstream requests
+4. **Circuit Breaker** — Separate Resilience4j configuration per service
+5. **CORS** — Allows all origins (development environment)
+6. **Logging** — Structured logs with correlation ID for every request/response
 
 **Route Structure:**
 
 ```
-/api/v1/users/**        → user-service:8087
-/api/v1/products/**     → product-service:8082
-/api/v1/inventories/**  → inventory-service:8083
-/api/v1/cart/**         → cart-service:8084
-/api/v1/orders/**       → order-service:8085
-/api/v1/payments/**     → payment-service:8086
-/api/v1/notifications/**→ notification-service:8088
+/api/v1/users/**         → user-service:8087
+/api/v1/products/**      → product-service:8082
+/api/v1/inventories/**   → inventory-service:8083
+/api/v1/cart/**          → cart-service:8084
+/api/v1/orders/**        → order-service:8085
+/api/v1/payments/**      → payment-service:8086
+/api/v1/notifications/** → notification-service:8088
 ```
 
 **Public Endpoints (no token required):**
@@ -352,6 +355,16 @@ GET  /actuator/health/**
 
 ---
 
+## Config Server
+
+The system uses Spring Cloud Config Server for centralized configuration management. Backend services fetch their configuration from `http://localhost:8888` at startup.
+
+- **Service Name:** `config-server-git`
+- **Port:** `8888`
+- **Config Source:** Git-based remote repository (defined in `config-server/src/main/resources/application.yml`)
+
+---
+
 ## Authentication — Keycloak
 
 Keycloak 24 is used as the OAuth2 / OpenID Connect identity provider.
@@ -361,24 +374,24 @@ Keycloak 24 is used as the OAuth2 / OpenID Connect identity provider.
 - **Roles**: `USER`, `SELLER`
 - **Password Policy**: min 8 characters
 - **Token Flow**:
-  - Access token → kept in memory (`tokenStore`)
+  - Access token → stored in memory (`tokenStore`)
   - Refresh token → `HttpOnly` cookie (`path: /api/v1/users`, 30 days)
-- **JWT Claims**: `realm_access.roles` → converted to `ROLE_USER` / `ROLE_SELLER` in Gateway
+- **JWT Claims**: `realm_access.roles` → converted to `ROLE_USER` / `ROLE_SELLER` at the Gateway
 
 ```
 User → POST /api/v1/users/login → User Service → Keycloak
-                                                          │
-                                              access_token + refresh_token
-                                                          │
-                                        access_token → response body
-                                        refresh_token → HttpOnly cookie
+                                                     │
+                                         access_token + refresh_token
+                                                     │
+                                     access_token → response body
+                                     refresh_token → HttpOnly cookie
 ```
 
 ---
 
 ## Database Migration — Flyway
 
-Each service manages its own PostgreSQL database with its own Flyway migrations. In `validate` mode, the service does not start if there is a schema mismatch.
+Each service manages its own PostgreSQL database through its own Flyway migrations. With `validate` mode enabled, the service will not start if there is a schema mismatch.
 
 ```
 product-service/db/migration/
@@ -409,7 +422,7 @@ payment-service/db/migration/
 
 ## Logging — Logstash & ELK
 
-Each Java service produces structured JSON logs using **Logstash Logback Encoder**.
+Each Java service produces structured JSON logs using the **Logstash Logback Encoder**.
 
 ```
 Service → logback-spring.xml → LogstashTcpSocketAppender → Logstash:5044
@@ -429,15 +442,15 @@ Service → logback-spring.xml → LogstashTcpSocketAppender → Logstash:5044
 }
 ```
 
-API Gateway adds `correlationId` to every request; this ID is propagated to all downstream service logs and enables distributed tracing.
+The API Gateway appends a `correlationId` to every request; this ID is propagated across all downstream service logs, enabling distributed tracing.
 
-> If Logstash server (`localhost:5044`) is not running, services continue to write to stdout; the application is not affected.
+> If the Logstash server (`localhost:5044`) is unavailable, services continue writing to stdout without any impact on the application.
 
 ---
 
 ## TDD
 
-The project was developed with **Test-Driven Development** principles. For each feature, tests were written first, then implementation was completed.
+The project was developed following **Test-Driven Development** principles. Tests were written before each implementation.
 
 **Test Coverage:**
 
@@ -454,22 +467,22 @@ The project was developed with **Test-Driven Development** principles. For each 
 **Testing Tools:**
 
 - **JUnit 5** — unit and integration tests
-- **Testcontainers** — integration tests with real PostgreSQL, Elasticsearch, Redis containers
-- **WireMock** — mocking Feign clients
+- **Testcontainers** — integration tests with real PostgreSQL, Elasticsearch, and Redis containers
+- **WireMock** — Feign client mocking
 - **Spring Security Test** — JWT and role-based endpoint tests
 
 ---
 
 ## CI/CD — GitHub Actions
 
-`.github/workflows/ci.yml` includes a two-stage pipeline:
+`.github/workflows/ci.yml` contains a two-stage pipeline:
 
 ### 1. Build & Test (every push/PR)
 
 ```
-push/PR → Checkout → JDK 21 Setup → Gradle cache → ./gradlew test --parallel
-                                                               │
-                                                    Test reports uploaded as artifacts
+push/PR → Checkout → JDK 21 setup → Gradle cache → ./gradlew test --parallel
+                                                              │
+                                                   Test reports uploaded as artifact
 ```
 
 ### 2. Jib Build & Push (main branch only)
@@ -478,7 +491,7 @@ push/PR → Checkout → JDK 21 Setup → Gradle cache → ./gradlew test --para
 main push → [after Build & Test passes]
           → Docker Hub login
           → ./gradlew jib --parallel
-          → All service images are pushed to Docker Hub
+          → All service images pushed to Docker Hub
 ```
 
 **Required Secrets:**
@@ -492,13 +505,13 @@ DOCKER_PASSWORD  → Docker Hub access token
 
 ## Container Build — Jib
 
-Docker image build process with [Google Jib](https://github.com/GoogleContainerTools/jib) **without requiring a Dockerfile**:
+**Dockerfile-free** Docker image build process using [Google Jib](https://github.com/GoogleContainerTools/jib):
 
 **Advantages:**
 
-- The whole project is not copied — only changed layers are rebuilt
-- Dependencies and application code are in separate layers → when dependencies do not change, build finishes in seconds
-- No Docker daemon required (works smoothly in CI environments)
+- Only changed layers are rebuilt — the entire project is not copied
+- Dependencies and application code are in separate layers → fast builds when dependencies haven't changed
+- No Docker daemon required (works seamlessly in CI environments)
 - Reproducible builds
 
 **Usage:**
@@ -518,9 +531,9 @@ Docker image build process with [Google Jib](https://github.com/GoogleContainerT
 **Image Configuration** (root `build.gradle`):
 
 ```
-Base Image : eclipse-temurin:21-jre-alpine
-Image Name : ecommerce/{service-name}:latest
-JVM Flags  : -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+Base Image  : eclipse-temurin:21-jre-alpine
+Image Name  : ecommerce/{service-name}:latest
+JVM Flags   : -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 ```
 
 ---
@@ -530,7 +543,7 @@ JVM Flags  : -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 ### Requirements
 
 - Docker & Docker Compose
-- JDK 21 (only for local build)
+- JDK 21 (for local builds only)
 
 ### 1. Build Images
 
@@ -545,13 +558,13 @@ JVM Flags  : -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 docker compose up -d
 ```
 
-### 3. Wait for Services to Become Healthy
+### 3. Wait for Services to Be Ready
 
 ```bash
 docker compose ps
 ```
 
-It can take around 30 seconds for Keycloak to become `healthy`.
+Keycloak may take ~30 seconds to reach a `healthy` state.
 
 ### 4. Access the Application
 
@@ -559,21 +572,22 @@ It can take around 30 seconds for Keycloak to become `healthy`.
 | ------------------- | ------------------------------------ |
 | Frontend            | http://localhost:5173                |
 | API Gateway         | http://localhost:8081                |
+| Config Server       | http://localhost:8888                |
 | Keycloak Admin      | http://localhost:8080 (admin/admin)  |
 | RabbitMQ Management | http://localhost:15672 (guest/guest) |
 
-### Update a Single Service During Development
+### Updating a Single Service During Development
 
 ```bash
-# 1. Change code
-# 2. Rebuild only the related service
+# 1. Modify the code
+# 2. Rebuild only the relevant service
 ./gradlew :order-service:jibDockerBuild
 
 # 3. Restart
 docker compose up -d order-service
 ```
 
-### Monitor Logs
+### Monitoring Logs
 
 ```bash
 # All services
@@ -603,13 +617,14 @@ e-commerce/
 ├── payment-service/            # Payment processing — Port 8086
 ├── user-service/               # Authentication — Port 8087
 ├── notification-service/       # Email notifications — Port 8088
+├── config-server/              # Spring Cloud Config Server — Port 8888
 ├── frontend/                   # React + Vite — Port 5173
 ├── keycloak/
 │   └── realm-export.json       # n11Ecommerce realm configuration
 ├── build.gradle                # Root build — Jib + Spring Boot + Java
 ├── settings.gradle             # Multi-module definitions
-├── dependencies.gradle         # Central dependency versions
-├── docker-compose.yml          # Full infrastructure + services
-├── Dockerfile                  # Legacy — Jib is preferred
+├── dependencies.gradle         # Centralized dependency versions
+├── docker-compose.yml          # All infrastructure + services
+├── Dockerfile                  # Legacy — Jib preferred
 └── init-db.sql                 # PostgreSQL database creation script
 ```

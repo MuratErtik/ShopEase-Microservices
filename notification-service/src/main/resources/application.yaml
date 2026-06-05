@@ -1,69 +1,8 @@
-server:
-  port: 8088
-
 spring:
+  cloud:
+    config:
+      uri: http://localhost:8888
+  config:
+    import: "configserver:"
   application:
     name: notification-service
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    listener:
-      simple:
-        acknowledge-mode: manual
-        retry:
-          enabled: true
-          initial-interval: 1000
-          max-attempts: 3
-          multiplier: 2.0
-        prefetch: 10
-
-
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:dmuratertik1@gmail.com}
-    password: ${MAIL_PASSWORD:olbmfwkqgbdnrtds}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          ssl:
-            trust: smtp.gmail.com
-
-messaging:
-  exchanges:
-    order: order.events
-  queues:
-    order-confirmed: notification.order.confirmed.queue
-  routing-keys:
-    order-confirmed: order.confirmed
-
-notification:
-  mail:
-    from: dmuratertik1@gmail.com
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
-
-logging:
-  level:
-    org.n11bootcamp.notificationservice: DEBUG
-    root: INFO

@@ -1,69 +1,8 @@
-server:
-  port: 8084
-
 spring:
+  cloud:
+    config:
+      uri: http://localhost:8888
+  config:
+    import: "configserver:"
   application:
     name: cart-service
-
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 5000ms
-      lettuce:
-        pool:
-          max-active: 10
-          max-idle: 5
-          min-idle: 1
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    listener:
-      simple:
-        acknowledge-mode: manual
-        retry:
-          enabled: true
-          initial-interval: 1000
-          max-attempts: 3
-          multiplier: 2.0
-
-messaging:
-  exchanges:
-    inventory: inventory.events
-  queues:
-    stock-updated: cart.stock.updated.queue
-  routing-keys:
-    stock-updated: stock.updated
-
-feign:
-  clients:
-    inventory-service:
-      url: http://${INVENTORY_SERVICE_HOST:localhost}:${INVENTORY_SERVICE_PORT:8083}
-    product-service:
-      url: http://${PRODUCT_SERVICE_HOST:localhost}:${PRODUCT_SERVICE_PORT:8082}
-  client:
-    config:
-      default:
-        connect-timeout: 5000
-        read-timeout: 5000
-
-cart:
-  ttl-minutes: 30
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-
-logging:
-  level:
-    org.n11bootcamp.cartservice: DEBUG
-    root: INFO

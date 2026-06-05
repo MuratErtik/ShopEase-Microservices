@@ -1,4 +1,4 @@
-# n11 Bootcamp
+# ShopEase-Microservices
 
 > A comprehensive e-commerce platform developed as the n11 Bootcamp capstone project, featuring production-ready design patterns.
 
